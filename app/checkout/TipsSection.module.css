@@ -1,0 +1,97 @@
+/* app/checkout/TipsSection.module.css */
+
+.tipsSection {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  overflow-x: auto; /* Add horizontal scroll if needed */
+}
+
+.tipsTitle {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #333; /* Dark text color */
+}
+
+.tipsGrid {
+  display: flex; /* Use flexbox for horizontal alignment */
+  gap: 10px; /* Reduced space between squares */
+  align-items: stretch; /* Align items to fill the container */
+  overflow-x: auto; /* Enable horizontal scrolling if content overflows */
+  padding-bottom: 10px; /* Space for scroll bar */
+}
+
+.tipCard, .customTipCard {
+  background-color: #f1f1f1;
+  border-radius: 8px; /* Slightly smaller border radius */
+  padding: 10px; /* Reduced padding for smaller cards */
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+  flex: 0 0 auto; /* Prevent flex items from shrinking */
+  min-width: 80px; /* Reduced minimum width */
+  max-width: 120px; /* Reduced maximum width */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+.tipCard:hover, .customTipCard:hover {
+  background-color: #e0e0e0;
+  transform: scale(1.05);
+}
+
+.tipPercentage {
+  font-size: 1.25rem; /* Reduced font size for percentage */
+  font-weight: bold; /* Bold font weight */
+  color: #000; /* Black text color */
+}
+
+.tipAmount {
+  font-size: 0.875rem; /* Smaller font size for amount */
+  color: #888; /* Gray text color */
+}
+
+.customTipCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.editIcon {
+  font-size: 1.25rem; /* Slightly smaller font size for the edit icon */
+  color: #000; /* Black color for the edit icon */
+}
+
+.customText {
+  font-size: 0.875rem; /* Same as tipAmount */
+  color: #333;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .tipCard, .customTipCard {
+    min-width: 70px; /* Further reduced minimum width on smaller screens */
+    max-width: 100px; /* Further reduced maximum width on smaller screens */
+  }
+}
+
+@media (max-width: 480px) {
+  .tipsTitle {
+    font-size: 1rem; /* Smaller title font on very small screens */
+  }
+
+  .tipPercentage {
+    font-size: 1rem; /* Smaller font size for percentage */
+  }
+
+  .tipAmount {
+    font-size: 0.75rem; /* Smaller font size for amount */
+  }
+
+  .editIcon {
+    font-size: 1rem; /* Smaller font size for the edit icon */
+  }
+}

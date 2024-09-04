@@ -2,12 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { loadStripe } from '@stripe/stripe-js';
+import stripePromise from '../../lib/stripe';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import styles from './CheckoutPage.module.css';
 import TipsSection from './TipsSection'; // Import TipsSection
-
-// const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY);
 
 const CheckoutForm = () => {
   const [tableNumber, setTableNumber] = useState(null);
@@ -16,16 +14,8 @@ const CheckoutForm = () => {
   const [customTip, setCustomTip] = useState('');
   const [amountDue, setAmountDue] = useState(0);
   
-  // const stripe = useStripe();
-  // const elements = useElements();
-
-  // const sampleArticles = [
-  //   { quantity: 2, name: "Water", price: 4.00 },      // Total for this item: 8 EUR
-  //   { quantity: 1, name: "Burger", price: 12.50 },    // Total for this item: 12.50 EUR
-  //   { quantity: 3, name: "Fries", price: 3.50 },      // Total for this item: 10.50 EUR
-  //   { quantity: 1, name: "Coke", price: 2.50 },       // Total for this item: 2.50 EUR
-  //   { quantity: 2, name: "Salad", price: 6.00 }       // Total for this item: 12 EUR
-  // ];
+  const stripe = useStripe();
+  const elements = useElements();
   
   // Example of calculating the total amount due
   const totalAmountDue = articles.reduce((total, article) => {
@@ -98,23 +88,21 @@ const CheckoutForm = () => {
       </div>
 
       <TipsSection onSelectTip={handleTipSelection} />
-
       <div className={styles.section}>
         <h3>Payment Details</h3>
-        <a href="/paymentsuccess">Pay</a>
-        {/* <form onSubmit={handlePayment}>
+        <form onSubmit={handlePayment}>
           <CardElement />
           <button type="submit" disabled={!stripe}>Pay</button>
-        </form> */}
+        </form>
       </div>
     </div>
   );
 };
 
 const CheckoutPage = () => (
-  // <Elements>
+  <Elements stripe={stripePromise}>
     <CheckoutForm />
-  // </Elements>
+  </Elements>
 );
 
 export default CheckoutPage;

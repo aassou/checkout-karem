@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "proxy": "https://192.168.178.31:8008",
-
   "scripts": {
     "dev": "next dev",
     "build": "next build",

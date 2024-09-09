@@ -1,0 +1,7 @@
+.messageBox {
+  padding: 15px;
+  border-radius: 3px; /* Oval corners */
+  text-align: center;
+  margin-top: 20px;
+  font-size: 16px;
+}

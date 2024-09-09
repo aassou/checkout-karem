@@ -2,39 +2,35 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import stripePromise from '../../lib/stripe';
+// import stripePromise from '../../lib/stripe';
+import MessageBox from '../../components/MessageBox/MessageBox';
+import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import styles from './CheckoutPage.module.css';
-import TipsSection from './TipsSection'; // Import TipsSection
+import TipsSection from './TipsSection';
 
 const CheckoutForm = () => {
   const [tableNumber, setTableNumber] = useState(null);
+  const [paymentId, setPaymentId] = useState(0);
   const [articles, setArticles] = useState([]);
   const [tip, setTip] = useState(0);
   const [customTip, setCustomTip] = useState('');
   const [amountDue, setAmountDue] = useState(0);
-  
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  // const stripePromise = null;
   const stripe = useStripe();
   const elements = useElements();
-  
-  // Example of calculating the total amount due
-  const totalAmountDue = articles.reduce((total, article) => {
-    return total + article.quantity * article.price;
-  }, 0);
-  
-  console.log(`Total Amount Due: ${totalAmountDue} EUR`); // Output: Total Amount Due: 45.5 EUR
-  
-  
+
   useEffect(() => {
     const fetchArticles = async () => {
       try {
-        const response = await axios.get('https://192.168.178.31:8008/order/1/1/1');
+        const response = await axios.get(process.env.NEXT_PUBLIC_BACKEND_API_URL + '/order/1/1/1');
         // setTableNumber(response.data.tableNumber);
         setTableNumber(1);
         setArticles(response.data.items);
-
-        const totalAmount = response.data.items.reduce((sum, article) => sum + article.itemPrice * article.quantity, 0);
-        setAmountDue(totalAmount);
+        setPaymentId(response.data.id);
+        // const totalAmount = response.data.items.reduce((sum, article) => sum + article.itemPrice * article.quantity, 0);
+        setAmountDue(response.data.totalAmount);
       } catch (error) {
         console.error('Error fetching articles:', error);
       }
@@ -62,8 +58,28 @@ const CheckoutForm = () => {
     if (paymentResult.error) {
       console.error('Payment error:', paymentResult.error.message);
     } else {
-      console.log('Payment successful:', paymentResult.token);
-      // Send token to backend for processing
+      console.log('Payment successful:', paymentResult);
+      
+      try {
+        const response = await axios.post(process.env.NEXT_PUBLIC_BACKEND_API_URL + '/payment/token', {
+          "paymentDetailsId": paymentId,
+          "token": paymentResult.token
+        }, {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+        });
+  
+        console.log(response);
+        if (response.status === 200) {
+          console.log('Payment processed successfully on backend:', response.data);
+          setPaymentSuccess(true);
+        } else {
+          console.error('Backend error processing payment:', response.data);
+        }
+      } catch (backendError) {
+        console.error('Error sending token to backend:', backendError);
+      }
     }
   };
 
@@ -88,21 +104,75 @@ const CheckoutForm = () => {
       </div>
 
       <TipsSection onSelectTip={handleTipSelection} />
+      
       <div className={styles.section}>
         <h3>Payment Details</h3>
-        <form onSubmit={handlePayment}>
-          <CardElement />
-          <button type="submit" disabled={!stripe}>Pay</button>
+        <form onSubmit={handlePayment} className={styles.paymentForm}>
+          <div className={styles.cardElementWrapper}>
+            <CardElement
+              options={{
+                style: {
+                  base: {
+                    fontSize: '18px',
+                    color: '#32325d',
+                    padding: '10px',
+                    height: '60px',
+                    lineHeight: '2.5',
+                    fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+                    '::placeholder': {
+                      color: '#aab7c4',
+                    },
+                  },
+                  invalid: {
+                    color: '#fa755a',
+                    iconColor: '#fa755a',
+                  },
+                },
+              }}
+            />
+          </div>
+          {!paymentSuccess ? (
+            <button className={styles.submitButton} type="submit" disabled={!stripe}>Pay</button>
+          ) : (
+            <MessageBox type="success" message="Payment Successful!" />
+          )}
         </form>
       </div>
     </div>
   );
 };
 
-const CheckoutPage = () => (
-  <Elements stripe={stripePromise}>
-    <CheckoutForm />
-  </Elements>
-);
+const CheckoutPage = () => {
+  const [stripePromise, setStripePromise] = useState(null);
+
+  useEffect(() => {
+    const fetchPublicKey = async () => {
+      try {
+        const response = await axios.post(process.env.NEXT_PUBLIC_BACKEND_API_URL + '/payment/public-key');
+        console.log("********** Fetch Public Key **********");
+        console.log(response.data);
+        const stripe = await loadStripe(response.data);
+        setStripePromise(stripe);
+      } catch (error) {
+        console.log('Error fetching Public Key: ', error);
+      }
+    };
+
+    fetchPublicKey();
+  }, []);
+
+  if (!stripePromise) {
+    // const stripe = loadStripe("pk_test_51JkDBCD8CM9vn1bFEZIIDSHGcntRE60KvzWDyTsDdJiXtyLvilMJGniyYXGbMEsIKVNcXSuvbRUYCeaR77hkVEbs00kYpMww0Y");
+    // setStripePromise(stripe);
+    console.log(process.env.NODE_ENV);
+    return <div>Loading payment gateway ... </div>;
+  }
+
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutForm />
+    </Elements>
+  );
+};
 
 export default CheckoutPage;

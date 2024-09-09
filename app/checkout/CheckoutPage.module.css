@@ -49,3 +49,30 @@
     grid-template-columns: 1fr 2fr 1fr;
   }
 }
+
+
+.submitButton {
+  background-color: #007bff; /* Purple background */
+  color: white;
+  font-size: 1.0rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submitButton:disabled {
+  background-color: #d3d3d3;
+  cursor: not-allowed;
+}
+
+.submitButton:not(:disabled):hover {
+  background-color: #007bff; /* Darker purple on hover */
+}
+
+.submitButton:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.5);
+}

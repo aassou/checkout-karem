@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 // import stripePromise from '../../lib/stripe';
 import MessageBox from '../../components/MessageBox/MessageBox';
@@ -17,6 +17,8 @@ const CheckoutForm = () => {
   const [customTip, setCustomTip] = useState('');
   const [amountDue, setAmountDue] = useState(0);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [selectedTip, setSelectedTip] = useState(0);
+  const webSocketRef = useRef(null);
   // const stripePromise = null;
   const stripe = useStripe();
   const elements = useElements();
@@ -29,14 +31,46 @@ const CheckoutForm = () => {
         setTableNumber(1);
         setArticles(response.data.items);
         setPaymentId(response.data.id);
-        // const totalAmount = response.data.items.reduce((sum, article) => sum + article.itemPrice * article.quantity, 0);
-        setAmountDue(response.data.totalAmount);
+        const totalAmount = response.data.items.reduce((sum, article) => sum + article.itemPrice * article.quantity, 0);
+        setAmountDue(totalAmount);
+        // setAmountDue(response.data.totalAmount);
+        console.log("useEffect Fetch");
       } catch (error) {
         console.error('Error fetching articles:', error);
       }
     };
 
     fetchArticles();
+  }, []);
+
+  // Set up WebSocket connection
+  useEffect(() => {
+    console.log("useEffect Socket");
+    const socketUrl = process.env.NEXT_PUBLIC_BACKEND_WEBSOCKET_URL;
+
+    webSocketRef.current = new WebSocket(socketUrl);
+
+    webSocketRef.current.onopen = () => {
+      console.log('WebSocket connection established');
+    };
+
+    webSocketRef.current.onmessage = (event) => {
+      console.log('Received from server:', event.data);
+    };
+
+    webSocketRef.current.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+
+    webSocketRef.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    return () => {
+      if (webSocketRef.current) {
+        webSocketRef.current.close();
+      }
+    };
   }, []);
 
   const handleCustomTip = (e) => {
@@ -87,6 +121,8 @@ const CheckoutForm = () => {
     setSelectedTip(tip);
   };
 
+  const totalAmountWithTip = (amountDue + selectedTip).toFixed(2);
+
   return (
     <div className={styles.container}>
       <div className={styles.section}>
@@ -103,7 +139,11 @@ const CheckoutForm = () => {
         <div className={styles.tableFooter}>Amount Due: {amountDue} EUR</div>
       </div>
 
-      <TipsSection onSelectTip={handleTipSelection} />
+      <TipsSection 
+        onSelectTip={handleTipSelection} 
+        amountDue={amountDue} 
+        webSocketRef={webSocketRef}  
+      />
       
       <div className={styles.section}>
         <h3>Payment Details</h3>
@@ -162,8 +202,8 @@ const CheckoutPage = () => {
   }, []);
 
   if (!stripePromise) {
-    // const stripe = loadStripe("pk_test_51JkDBCD8CM9vn1bFEZIIDSHGcntRE60KvzWDyTsDdJiXtyLvilMJGniyYXGbMEsIKVNcXSuvbRUYCeaR77hkVEbs00kYpMww0Y");
-    // setStripePromise(stripe);
+    const stripe = loadStripe("pk_test_51JkDBCD8CM9vn1bFEZIIDSHGcntRE60KvzWDyTsDdJiXtyLvilMJGniyYXGbMEsIKVNcXSuvbRUYCeaR77hkVEbs00kYpMww0Y");
+    setStripePromise(stripe);
     console.log(process.env.NODE_ENV);
     return <div>Loading payment gateway ... </div>;
   }

@@ -22,6 +22,7 @@
   align-items: stretch; /* Align items to fill the container */
   overflow-x: auto; /* Enable horizontal scrolling if content overflows */
   padding-bottom: 10px; /* Space for scroll bar */
+  padding: 10px 5px;
 }
 
 .tipCard, .customTipCard {
@@ -68,6 +69,22 @@
 .customText {
   font-size: 0.875rem; /* Same as tipAmount */
   color: #333;
+}
+
+.customTipInput {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.selected {
+  background-color: #e0e0e0;
+  transform: scale(1.05);
+  border: 2px solid #007bff; /* Add a blue border */
 }
 
 /* Media Queries */

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-// import stripePromise from '../../lib/stripe';
 import MessageBox from '../../components/MessageBox/MessageBox';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -16,36 +15,34 @@ const CheckoutForm = () => {
   const [tip, setTip] = useState(0);
   const [customTip, setCustomTip] = useState('');
   const [amountDue, setAmountDue] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [selectedTip, setSelectedTip] = useState(0);
   const webSocketRef = useRef(null);
-  // const stripePromise = null;
   const stripe = useStripe();
   const elements = useElements();
 
+  // Fetch articles when component mounts
   useEffect(() => {
     const fetchArticles = async () => {
       try {
         const response = await axios.get(process.env.NEXT_PUBLIC_BACKEND_API_URL + '/order/1/1/1');
-        // setTableNumber(response.data.tableNumber);
         setTableNumber(1);
         setArticles(response.data.items);
         setPaymentId(response.data.id);
         const totalAmount = response.data.items.reduce((sum, article) => sum + article.itemPrice * article.quantity, 0);
         setAmountDue(totalAmount);
-        // setAmountDue(response.data.totalAmount);
-        console.log("useEffect Fetch");
+        console.log("Fetched articles");
       } catch (error) {
         console.error('Error fetching articles:', error);
       }
     };
-
     fetchArticles();
   }, []);
 
   // Set up WebSocket connection
   useEffect(() => {
-    console.log("useEffect Socket");
+    console.log("Setting up WebSocket");
     const socketUrl = process.env.NEXT_PUBLIC_BACKEND_WEBSOCKET_URL;
 
     webSocketRef.current = new WebSocket(socketUrl);
@@ -80,40 +77,53 @@ const CheckoutForm = () => {
 
   const handlePayment = async (e) => {
     e.preventDefault();
-
+  
     if (!stripe || !elements) {
       console.error('Stripe has not loaded yet.');
       return;
     }
-
-    const cardElement = elements.getElement(CardElement);
-    const paymentResult = await stripe.createToken(cardElement);
-
-    if (paymentResult.error) {
-      console.error('Payment error:', paymentResult.error.message);
-    } else {
-      console.log('Payment successful:', paymentResult);
-      
-      try {
-        const response = await axios.post(process.env.NEXT_PUBLIC_BACKEND_API_URL + '/payment/token', {
-          "paymentDetailsId": paymentId,
-          "token": paymentResult.token
-        }, {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-        });
   
-        console.log(response);
-        if (response.status === 200) {
-          console.log('Payment processed successfully on backend:', response.data);
-          setPaymentSuccess(true);
-        } else {
-          console.error('Backend error processing payment:', response.data);
+    // Get the CardElement and ensure it's mounted
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      console.error('CardElement is not mounted.');
+      return;
+    }
+  
+    setLoading(true); // Start loading when payment starts
+  
+    try {
+      const paymentResult = await stripe.createToken(cardElement);
+  
+      if (paymentResult.error) {
+        console.error('Payment error:', paymentResult.error.message);
+      } else {
+        console.log('Payment successful:', paymentResult);
+  
+        try {
+          const response = await axios.post(process.env.NEXT_PUBLIC_BACKEND_API_URL + '/payment/token', {
+            paymentDetailsId: paymentId,
+            token: paymentResult.token,
+          }, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+  
+          if (response.status === 200) {
+            console.log('Payment processed successfully on backend:', response);
+            setPaymentSuccess(true);
+          } else {
+            console.error('Backend error processing payment:', response.data);
+          }
+        } catch (backendError) {
+          console.error('Error sending token to backend:', backendError);
         }
-      } catch (backendError) {
-        console.error('Error sending token to backend:', backendError);
       }
+    } catch (error) {
+      console.error('Error creating Stripe token:', error);
+    } finally {
+      setLoading(false); // Stop loading after request is done
     }
   };
 
@@ -125,6 +135,9 @@ const CheckoutForm = () => {
 
   return (
     <div className={styles.container}>
+      {/* Show spinner alongside the form, but keep form mounted */}
+      {loading && <div className={styles.spinner}>Loading...</div>}
+  
       <div className={styles.section}>
         <div className={styles.title}>Table {tableNumber}</div>
         <div className={styles.tableBody}>
@@ -138,13 +151,13 @@ const CheckoutForm = () => {
         </div>
         <div className={styles.tableFooter}>Amount Due: {amountDue} EUR</div>
       </div>
-
+  
       <TipsSection 
         onSelectTip={handleTipSelection} 
         amountDue={amountDue} 
         webSocketRef={webSocketRef}  
       />
-      
+  
       <div className={styles.section}>
         <h3>Payment Details</h3>
         <form onSubmit={handlePayment} className={styles.paymentForm}>
@@ -155,9 +168,6 @@ const CheckoutForm = () => {
                   base: {
                     fontSize: '18px',
                     color: '#32325d',
-                    padding: '10px',
-                    height: '60px',
-                    lineHeight: '2.5',
                     fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
                     '::placeholder': {
                       color: '#aab7c4',
@@ -172,7 +182,9 @@ const CheckoutForm = () => {
             />
           </div>
           {!paymentSuccess ? (
-            <button className={styles.submitButton} type="submit" disabled={!stripe}>Pay</button>
+            <button className={styles.submitButton} type="submit" disabled={!stripe || loading}>
+              {loading ? 'Processing...' : 'Pay'}
+            </button>
           ) : (
             <MessageBox type="success" message="Payment Successful!" />
           )}
@@ -180,6 +192,7 @@ const CheckoutForm = () => {
       </div>
     </div>
   );
+  
 };
 
 const CheckoutPage = () => {
@@ -188,9 +201,7 @@ const CheckoutPage = () => {
   useEffect(() => {
     const fetchPublicKey = async () => {
       try {
-        const response = await axios.post(process.env.NEXT_PUBLIC_BACKEND_API_URL + '/payment/public-key');
-        console.log("********** Fetch Public Key **********");
-        console.log(response.data);
+        const response = await axios.post(process.env.NEXT_PUBLIC_BACKEND_API_URL + '/payment/key');
         const stripe = await loadStripe(response.data);
         setStripePromise(stripe);
       } catch (error) {
@@ -202,10 +213,7 @@ const CheckoutPage = () => {
   }, []);
 
   if (!stripePromise) {
-    const stripe = loadStripe("pk_test_51JkDBCD8CM9vn1bFEZIIDSHGcntRE60KvzWDyTsDdJiXtyLvilMJGniyYXGbMEsIKVNcXSuvbRUYCeaR77hkVEbs00kYpMww0Y");
-    setStripePromise(stripe);
-    console.log(process.env.NODE_ENV);
-    return <div>Loading payment gateway ... </div>;
+    return <div>Loading payment gateway...</div>;
   }
 
   return (

@@ -25,7 +25,10 @@ const nextConfig = {
   },
   env: {
     NEXT_PUBLIC_BACKEND_API_URL: process.env.NEXT_PUBLIC_BACKEND_API_URL,
-  }
+  },
+  experimental: {
+    appDir: true,
+  },
 };
 
 export default nextConfig;

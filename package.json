@@ -2,7 +2,7 @@
   "name": "checkout-page",
   "version": "0.1.0",
   "private": true,
-  "proxy": "https://192.168.178.31:8008",
+  "proxy": "https://192.168.178.35:8008",
   "scripts": {
     "dev": "node server.js",
     "build": "next build",
@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^5.6.0",
     "@stripe/react-stripe-js": "^2.8.0",
     "@stripe/stripe-js": "^4.4.0",
     "axios": "^1.7.7",
@@ -25,7 +26,10 @@
     "styled-components": "^6.1.13"
   },
   "devDependencies": {
+    "@types/node": "22.5.5",
+    "@types/react": "18.3.8",
     "postcss": "^8",
-    "tailwindcss": "^3.4.1"
+    "tailwindcss": "^3.4.1",
+    "typescript": "5.6.2"
   }
 }

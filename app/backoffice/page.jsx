@@ -47,7 +47,7 @@ export default function BackofficePage() {
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100">
         <h2 className="text-2xl font-bold mb-4">Company: {company.name}</h2>
-        {selectedPage === 'branches' && <Branches />}
+        {selectedPage === 'branches' && <Branches companyId={1} />}
         {selectedPage === 'tables' && <Tables />}
       </div>
     </div>

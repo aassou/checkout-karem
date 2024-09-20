@@ -2,6 +2,8 @@
 "use client"; // Add this at the top
 
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import BranchTile from './BrancheTile';
 
 function Branches({companyId}) {
   const [branches, setBranches] = useState([]);
@@ -29,26 +31,21 @@ function Branches({companyId}) {
     setBranchLocation('');
   };
 
+  const handleEdit = (branch) => {
+    alert(`Editing ${branch.name}`);
+  };
+
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Manage Branches</h2>
-      {/* Branch List */}
-      <table className="min-w-full bg-white">
-        <thead>
-          <tr>
-            <th className="py-2">Branch Name</th>
-            <th className="py-2">Location</th>
-          </tr>
-        </thead>
-        <tbody>
-          {branches.map((branch, index) => (
-            <tr key={index}>
-              <td className="py-2">{branch.name}</td>
-              <td className="py-2">{branch.location}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {branches.map((branch, index) => (
+        <BranchTile
+          key={index}
+          name={branch.name}
+          address={branch.address}
+          phone={branch.contactNumber}
+          onEdit={() => handleEdit(branch)}
+        />
+      ))}
     </div>
   );
 }
